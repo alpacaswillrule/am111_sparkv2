@@ -1,0 +1,14 @@
+pyspark
+boto3
+bs4
+lxml
+numpy
+pandas
+paramiko
+requests
+scikit-learn
+spark-nlp
+sparknlp
+warcio
+yfinance
+langdetect

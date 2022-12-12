@@ -1,0 +1,6 @@
+.env
+data/
+models/
+virtualenvs/
+articlespar.parquet/
+articlespar.parquet
