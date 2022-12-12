@@ -3,7 +3,11 @@
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType, LongType, IntegerType
 import sparknlp
-spark = sparknlp.start() 
+spark = sparknlp.start()\
+    .config("spark.executorEnv.YARN_CONTAINER_RUNTIME_TYPE", "docker")\
+    .config("spark.executorEnv.YARN_CONTAINER_RUNTIME_DOCKER_IMAGE", "TODO")\
+        .config("spark.appMasterEnv.YARN_CONTAINER_RUNTIME_TYPE", "docker")\
+    .config("spark.appMasterEnv.YARN_CONTAINER_RUNTIME_DOCKER_IMAGE", "TODO")\
 # sparknlp.start(gpu=True) >> for training on GPU
 from sparknlp.base import *
 from sparknlp.annotator import *
