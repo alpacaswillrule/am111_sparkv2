@@ -68,7 +68,9 @@ data = StructType([\
 def drop_nonfinance_articles(df):
   model = PipelineModel.load(path_dl_model)
   df = model.transform(df)
-  df = df.filter(df['finance'] == 1)
+  df = df.withColumn('finance', df['financial_model_pred.result'].getItem(0).cast('float'))
+
+  df = df.filter(df['financial_model_pred.result'] == 1.0)
   return df
 
 DLpipelineModel = DLpipeline.fit(train)
@@ -77,12 +79,6 @@ DLpipelineModel.save("dl_model")
 print("done training")
 test_predict = DLpipelineModel.transform(test)
 
-results = test_predict.select('text','price', 'financial','financial_model_pred.result')
-results = results.withColumn('result', results['result'].getItem(0).cast('float'))
-
-results = results.withColumn('result', results['result'].cast('float'))
-print("done predicting, here are results on the test set")
-print(classification_report(results.select('financial').collect(), results.select('result').collect()), 'green')
 
 
 
