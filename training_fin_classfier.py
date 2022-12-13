@@ -3,7 +3,9 @@
   USUAGE: 
   note you have to use ec2-user as username when ssh and scp
   CREATE CLUSTER WITH SPARK-DEV.IPYNB
-  SCP THIS FILE, SENTDAT, ARTICLESPAR,DOCKERFILE TO THE CLUSTER
+  EMPTY THE MODELS FOLDER IN THIS LOCAL BEFORE SCP
+  DO NOT STORE VIRTUAL ENVIROMENT LOCALLY
+  SCP THIS ENTIRE DIRECTORY TO CLUSTER
   THEN SSH ONTO CLUSTER ENTER THE DIRECTORY WITH THE FILES
   THEN BUILD DOCKERFILE AND RUN THE CONTAINER WITH
   sudo docker build -t <name> .
@@ -43,11 +45,11 @@ import math
 import os
 #PARAMETERS
 
-numcrawlsforrun = 5
+numcrawlsforrun = 40
 batch_size_max = sys.maxsize -1
-num_records_percrawl = 120 #number of recors to attempt to extract from each crawl, or takes all the records if less.
+num_records_percrawl = 800 #number of recors to attempt to extract from each crawl, or takes all the records if less.
 ticker = 'SPY'
-ratio_com_yfin = .7 #for every commoncrawl article, how many yahoo finance articles to include
+ratio_com_yfin = 1 #for every commoncrawl article, how many yahoo finance articles to include
 #read in financewordlist.csv into the list
 wordlist = pd.read_csv('./sentdat/topics.csv', header=None)[0].tolist()
 wordlist.extend(yf.Ticker(ticker).info['longName'].split())
@@ -166,6 +168,7 @@ df = df.union(articles)
 #split the data into training and testing
 train, test = df.randomSplit([0.8, 0.2], seed=3204123)
 
+df.unpersist() #remove df to free up memory
 
 # preprocess the text data
 document_assembler = DocumentAssembler()\
@@ -232,11 +235,9 @@ DLpipelineModel.save(f"./models/dl_model_{numcrawlsforrun*num_records_percrawl}_
 
 # model = PipelineModel.load("dl_model")
 print("done training and saving model")
-test_predict = DLpipelineModel.transform(test)
+results = DLpipelineModel.transform(test)
 
-
-
-results = test_predict.select('text','price', 'financial','financial_model_pred.result')
+results = results.select('text','price', 'financial','financial_model_pred.result')
 results = results.withColumn('result', results['result'].getItem(0).cast('float'))
 
 results = results.withColumn('result', results['result'].cast('float'))
