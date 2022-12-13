@@ -1,9 +1,16 @@
   
 '''
-  USUAGE: SCP THIS FILE, SENTDAT, ARTICLESPAR,DOCKERFILE TO THE CLUSTER
+  USUAGE: 
+  note you have to use ec2-user as username when ssh and scp
+  CREATE CLUSTER WITH SPARK-DEV.IPYNB
+  SCP THIS FILE, SENTDAT, ARTICLESPAR,DOCKERFILE TO THE CLUSTER
+  THEN SSH ONTO CLUSTER ENTER THE DIRECTORY WITH THE FILES
   THEN BUILD DOCKERFILE AND RUN THE CONTAINER WITH
-  docker run -v "$(pwd)/models:./models" your_image_name
+  sudo docker build -t <name> .
+  AND RUN WITH
+  sudo docker run -v "$(pwd)/models:/models" your_image_name
   to save model to models folder on hostmachine
+  EXAMPLE SCP AND SSH COMMANDS EXIST AT THE BEGINNING OF SPARK-DEV FILE.
 '''
 
 from pyspark.sql import SparkSession, DataFrame
@@ -36,7 +43,7 @@ import math
 import os
 #PARAMETERS
 
-numcrawlsforrun = 300
+numcrawlsforrun = 5
 batch_size_max = sys.maxsize -1
 num_records_percrawl = 120 #number of recors to attempt to extract from each crawl, or takes all the records if less.
 ticker = 'SPY'
