@@ -1,4 +1,10 @@
   
+'''
+  USUAGE: SCP THIS FILE, SENTDAT, ARTICLESPAR,DOCKERFILE TO THE CLUSTER
+  THEN BUILD DOCKERFILE AND RUN THE CONTAINER WITH
+  docker run -v "$(pwd)/models:./models" your_image_name
+  to save model to models folder on hostmachine
+'''
 
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType, LongType, IntegerType
@@ -30,27 +36,15 @@ import math
 import os
 #PARAMETERS
 
-numcrawlsforrun = 5
+numcrawlsforrun = 300
 batch_size_max = sys.maxsize -1
-num_records_percrawl = 30 #number of recors to attempt to extract from each crawl, or takes all the records if less.
+num_records_percrawl = 120 #number of recors to attempt to extract from each crawl, or takes all the records if less.
 ticker = 'SPY'
-ratio_com_yfin = 1 #for every commoncrawl article, how many yahoo finance articles to include
+ratio_com_yfin = .7 #for every commoncrawl article, how many yahoo finance articles to include
 #read in financewordlist.csv into the list
 wordlist = pd.read_csv('./sentdat/topics.csv', header=None)[0].tolist()
 wordlist.extend(yf.Ticker(ticker).info['longName'].split())
 
-
-#start spark sesssion spark.nlp.start already does this
-# spark = SparkSession.builder.appName("sentimentanalysis")\
-# .config("spark.jars.packages","com.johnsnowlabs.nlp:spark-nlp_2.12:4.2.3")\
-#     .getOrCreate()
-# .config('spark.sql.warehouse.dir', f'file://{os.getcwd()}')\
-# .master("local[*]")\ #TODO NOT SURE ABOUT THESE
-# .config("spark.driver.memory","8G")\
-# .config("spark.driver.maxResultSize", "2G")\
-# .config("spark.jars", "file:///home/ubuntu/sparknlp.jar")\
-# .config("spark.driver.extraClassPath", "file:///home/ubuntu/sparknlp.jar")\
-# .config("spark.executor.extraClassPath", "file:///home/ubuntu/sparknlp.jar")\
 
 ###GETTING WARC FILE NAMES FROM S3, GRABBING A RANDOM SAMPLE OF THEM
 s3 = boto3.resource('s3')
@@ -225,7 +219,10 @@ DLpipeline = Pipeline(
 
 
 DLpipelineModel = DLpipeline.fit(train)
-DLpipelineModel.save(f"./models/dl_model_{numcrawlsforrun*num_records_percrawl}_{ratio_com_yfin}_{time.time()}")
+timevar = time.time()
+DLpipelineModel.save(f"./models/dl_model_{numcrawlsforrun*num_records_percrawl}_{ratio_com_yfin}_{timevar}")
+
+
 # model = PipelineModel.load("dl_model")
 print("done training and saving model")
 test_predict = DLpipelineModel.transform(test)
