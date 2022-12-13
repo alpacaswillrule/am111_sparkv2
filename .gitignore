@@ -4,3 +4,4 @@ models/
 virtualenvs/
 articlespar.parquet/
 articlespar.parquet
+dl_model/
