@@ -240,7 +240,6 @@ results = DLpipelineModel.transform(test)
 results = results.select('text','price', 'financial','financial_model_pred.result')
 results = results.withColumn('result', results['result'].getItem(0).cast('float'))
 
-results = results.withColumn('result', results['result'].cast('float'))
 print("done predicting, here are results on the test set")
 print(classification_report(results.select('financial').collect(), results.select('result').collect()), 'green')
 
