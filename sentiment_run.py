@@ -69,17 +69,8 @@ def drop_nonfinance_articles(df):
   model = PipelineModel.load(path_dl_model)
   df = model.transform(df)
   df = df.withColumn('finance', df['financial_model_pred.result'].getItem(0).cast('float'))
-
   df = df.filter(df['financial_model_pred.result'] == 1.0)
   return df
-
-DLpipelineModel = DLpipeline.fit(train)
-DLpipelineModel.save("dl_model")
-# model = PipelineModel.load("dl_model")
-print("done training")
-test_predict = DLpipelineModel.transform(test)
-
-
 
 
 
