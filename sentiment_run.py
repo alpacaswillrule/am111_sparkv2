@@ -32,13 +32,13 @@ import numpy as np
 #PARAMETERS
 path_dl_model = './models/model_dl'
 batch_size_max = sys.maxsize -1
-num_records_percrawl = 400 #number of recors to attempt to extract from each crawl
+num_records_percrawl = 1200 #number of recors to attempt to extract from each crawl
 ticker = 'SPY'
 list_of_dates_to_process = []
 #read in financewordlist.csv into the list
 wordlist = pd.read_csv('./sentdat/topics.csv', header=None)[0].tolist()
 wordlist.extend(yf.Ticker(ticker).info['longName'].split())
-number_warcs_to_analyze = 2 #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
+number_warcs_to_analyze = 15 #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
 
 ###GETTING WARC FILE NAMES FROM S3, GRABBING A RANDOM SAMPLE OF THEM
 s3 = boto3.resource('s3')
@@ -188,22 +188,24 @@ pipeline = Pipeline(stages=[
     SentimentDetector
 ])
 
-newdf = pipeline.fit(df).transform(df)
+df = pipeline.fit(df).transform(df)
 
 df = df.withColumn("sentiment_score", concat_ws(",", "sentiment_score.result"))
 
 print("total positive and negatives: ")
-print("positives", newdf.filter(col('sentiment_score') == 'positive').count())
-print("negatives", newdf.filter(col('sentiment_score') == 'negative').count())
+print("positives", df.filter(col('sentiment_score') == 'positive').count())
+print("negatives", df.filter(col('sentiment_score') == 'negative').count())
 
 sentscores = []
 finacial_data = []
 for date in datelist:
     print("date: ", date)
-    positives = newdf.filter(col('sentiment_score') == 'positive').filter(col('date') == date).count()
-    negatives = newdf.filter(col('sentiment_score') == 'negative').filter(col('date') == date).count()
+    positives = df.filter(col('sentiment_score') == 'positive').filter(col('date') == date).count()
+    negatives = df.filter(col('sentiment_score') == 'negative').filter(col('date') == date).count()
     print("positives", positives)
     print("negatives", negatives)
+    if negatives == 0:
+        sentscores.append(positives)
     sentscores.append(positives/negatives)
     finacial_data.append(float(stockdata[date]))
 
