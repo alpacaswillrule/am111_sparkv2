@@ -1,6 +1,6 @@
   
 '''
-  IF RUNNING LOCALLY SPECIFY AWS KEYS VIA -e when running dockerfile
+  IF RUNNING LOCALLY SPECIFY AWS KEYS VIA -e when running dockerfile (-e AWS_ACCESS_KEY_ID= -e AWS_SECRET_ACCESS_KEY=)
   USUAGE: 
   note you have to use ec2-user as username when ssh and scp
   CREATE CLUSTER WITH SPARK-DEV.IPYNB
