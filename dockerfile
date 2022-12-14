@@ -12,6 +12,7 @@ RUN python3 -V
 
 ENV PYSPARK_DRIVER_PYTHON python3
 ENV PYSPARK_PYTHON python3
+ENV PYTHONFILETORUN ./training_fin_classfier.py
 
 COPY requirements.txt ./
 COPY articlespar.parquet ./articlespar.parquet
@@ -22,4 +23,4 @@ COPY models ./models
 RUN pip3 install --upgrade pip
 RUN pip3 install -r ./requirements.txt
 
-CMD [ "python3", "./training_fin_classfier.py" ]
+CMD [ "sh", "-c", "python3 $PYTHONFILETORUN" ]
