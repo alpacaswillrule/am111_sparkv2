@@ -3,6 +3,7 @@ Usuage:
 scp this file, a model called model_dl, and sentdat folder to the cluster, and the dockerfile
 run the dockerfile with -e PYTHONFILETORUN=./sentiment_run.py
 '''
+#TODO SORT THE WARCS AND SENTIMENT BY DATE
 
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType, LongType, IntegerType
@@ -143,3 +144,45 @@ if rows_batch_len > 0:
     rows_batch_len = 0
 print("done")
 print("failures: ", failures)
+
+###########READING IN THE DATA NOW DONE, STARTING TO PROCESS IT
+
+document_assembler = DocumentAssembler() \
+    .setInputCol('text') \
+    .setOutputCol('document')
+
+sentence_detector = SentenceDetector() \
+    .setInputCols(["document"]) \
+    .setOutputCol("sentence")
+
+tokenizer = Tokenizer() \
+    .setInputCols(['sentence']) \
+    .setOutputCol('token')
+
+# normalizer = Normalizer() \
+#     .setInputCols(['token']) \
+#     .setOutputCol('normalized') \
+
+lemmatizer = Lemmatizer()\
+    .setInputCols(['token'])\
+    .setOutputCol('lemma')\
+  .setDictionary("./sentdat/lemmas_small.txt", key_delimiter="->", value_delimiter="\t")
+#! wget -N https://s3.amazonaws.com/auxdata.johnsnowlabs.com/public/resources/en/lemma-corpus-small/lemmas_small.txt -P /tmp
+SentimentDetector = sentiment.SentimentDetector() \
+    .setInputCols(['lemma', 'sentence'])\
+    .setOutputCol('sentiment_score')\
+    .setDictionary('./sentdat/sentiment-big.csv', ',')\
+
+pipeline = Pipeline(stages=[
+    document_assembler, 
+    sentence_detector,
+    tokenizer,
+    lemmatizer,
+    SentimentDetector
+])
+
+newdf = pipeline.fit(df).transform(df)
+
+
+print("positives", newdf.filter(col('sentiment_score') == 'positive').count())
+print("negatives", newdf.filter(col('sentiment_score') == 'negative').count())
