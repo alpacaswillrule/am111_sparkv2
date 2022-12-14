@@ -1,3 +1,8 @@
+'''
+Usuage:
+scp this file, a model called model_dl, and sentdat folder to the cluster, and the dockerfile
+run the dockerfile with -e PYTHONFILETORUN=./sentiment_run.py
+'''
 
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType, LongType, IntegerType
