@@ -1,7 +1,8 @@
 '''
 Usuage:
 scp this file, a model called model_dl, and sentdat folder to the cluster, and the dockerfile
-run the dockerfile with -e PYTHONFILETORUN=./sentiment_run.py
+run the dockerfile with -e PYTHONFILETORUN=./sentiment_run.py, arguments go before the image name
+if running locally just build and run dockerfile but with additional arguments of (-e AWS_ACCESS_KEY_ID= -e AWS_SECRET_ACCESS_KEY=)
 '''
 
 from pyspark.sql import SparkSession, DataFrame
@@ -29,15 +30,15 @@ import random
 import sys 
 import numpy as np
 #PARAMETERS
-path_dl_model = '$(pwd)/model_dl'
+path_dl_model = './models/model_dl'
 batch_size_max = sys.maxsize -1
-num_records_percrawl = 150 #number of recors to attempt to extract from each crawl
+num_records_percrawl = 400 #number of recors to attempt to extract from each crawl
 ticker = 'SPY'
 list_of_dates_to_process = []
 #read in financewordlist.csv into the list
 wordlist = pd.read_csv('./sentdat/topics.csv', header=None)[0].tolist()
 wordlist.extend(yf.Ticker(ticker).info['longName'].split())
-number_warcs_to_analyze = 1000 #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
+number_warcs_to_analyze = 2 #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
 
 ###GETTING WARC FILE NAMES FROM S3, GRABBING A RANDOM SAMPLE OF THEM
 s3 = boto3.resource('s3')
@@ -74,7 +75,7 @@ def drop_nonfinance_articles(df):
   model = PipelineModel.load(path_dl_model)
   df = model.transform(df)
   df = df.withColumn('finance', df['financial_model_pred.result'].getItem(0).cast('float'))
-  df = df.filter(df['financial_model_pred.result'] == 1.0)
+  df = df.filter(df['finance'] == 1.0)
   return df
 
 
@@ -148,6 +149,9 @@ if rows_batch_len > 0:
 print("done")
 print("failures: ", failures)
 
+#dropping non-finance articles
+df = drop_nonfinance_articles(df)
+print("size of data after dropping non-finance articles: ", df.count())
 ###########READING IN THE DATA NOW DONE, STARTING TO PROCESS IT
 
 document_assembler = DocumentAssembler() \
@@ -186,6 +190,8 @@ pipeline = Pipeline(stages=[
 
 newdf = pipeline.fit(df).transform(df)
 
+df = df.withColumn("sentiment_score", concat_ws(",", "sentiment_score.result"))
+
 print("total positive and negatives: ")
 print("positives", newdf.filter(col('sentiment_score') == 'positive').count())
 print("negatives", newdf.filter(col('sentiment_score') == 'negative').count())
@@ -206,3 +212,4 @@ x = np.arange(len(finacial_data))
 plt.plot(x, finacial_data)
 plt.plot(x, sentscores)
 plt.show()
+plt.savefig('sentiment.png')

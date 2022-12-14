@@ -19,6 +19,7 @@ COPY articlespar.parquet ./articlespar.parquet
 COPY training_fin_classfier.py ./
 COPY sentdat ./sentdat
 COPY models ./models
+COPY sentiment_run.py ./
 
 RUN pip3 install --upgrade pip
 RUN pip3 install -r ./requirements.txt
