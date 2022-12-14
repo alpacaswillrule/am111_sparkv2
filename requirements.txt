@@ -12,3 +12,4 @@ sparknlp
 warcio
 yfinance
 langdetect
+matplotlib
