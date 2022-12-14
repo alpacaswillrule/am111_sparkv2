@@ -1,5 +1,6 @@
   
 '''
+  IF RUNNING LOCALLY SPECIFY AWS KEYS VIA -e when running dockerfile
   USUAGE: 
   note you have to use ec2-user as username when ssh and scp
   CREATE CLUSTER WITH SPARK-DEV.IPYNB
@@ -12,6 +13,7 @@
   AND RUN WITH
   sudo docker run -v "$(pwd)/models:/models" your_image_name
   to save model to models folder on hostmachine
+  then can scp trained weights from models folder back to your local machine
   EXAMPLE SCP AND SSH COMMANDS EXIST AT THE BEGINNING OF SPARK-DEV FILE.
 '''
 
@@ -45,9 +47,9 @@ import math
 import os
 #PARAMETERS
 
-numcrawlsforrun = 40
+numcrawlsforrun = 1
 batch_size_max = sys.maxsize -1
-num_records_percrawl = 800 #number of recors to attempt to extract from each crawl, or takes all the records if less.
+num_records_percrawl = 60 #number of recors to attempt to extract from each crawl, or takes all the records if less.
 ticker = 'SPY'
 ratio_com_yfin = 1 #for every commoncrawl article, how many yahoo finance articles to include
 #read in financewordlist.csv into the list
