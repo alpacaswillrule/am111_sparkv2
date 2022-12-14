@@ -3,7 +3,6 @@ Usuage:
 scp this file, a model called model_dl, and sentdat folder to the cluster, and the dockerfile
 run the dockerfile with -e PYTHONFILETORUN=./sentiment_run.py
 '''
-#TODO SORT THE WARCS AND SENTIMENT BY DATE
 
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.types import StructType, StructField, StringType, LongType, IntegerType
@@ -28,16 +27,17 @@ import boto3
 import botocore
 import random
 import sys 
+import numpy as np
 #PARAMETERS
-path_dl_model = '$(pwd)/models/model_dl'
-numcrawlsforrun = 1
+path_dl_model = '$(pwd)/model_dl'
 batch_size_max = sys.maxsize -1
 num_records_percrawl = 150 #number of recors to attempt to extract from each crawl
 ticker = 'SPY'
+list_of_dates_to_process = []
 #read in financewordlist.csv into the list
 wordlist = pd.read_csv('./sentdat/topics.csv', header=None)[0].tolist()
 wordlist.extend(yf.Ticker(ticker).info['longName'].split())
-
+number_warcs_to_analyze = 1000 #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
 
 ###GETTING WARC FILE NAMES FROM S3, GRABBING A RANDOM SAMPLE OF THEM
 s3 = boto3.resource('s3')
@@ -47,11 +47,10 @@ for object in my_bucket.objects.filter(Prefix='crawl-data/CC-NEWS/'):
     if object.key.endswith('.warc.gz'):
         warcs.append(object.key)
 
-#choose 100 random warcs
-randomwarcs = random.sample(warcs, numcrawlsforrun)
+warcs = warcs[-number_warcs_to_analyze:]
 
-for index, warc in enumerate(randomwarcs):
-    randomwarcs[index] = 'https://data.commoncrawl.org/' + warc
+for index, warc in enumerate(warcs):
+    warcs[index] = 'https://data.commoncrawl.org/' + warc
 
 #function to convert time from commoncrawl format to y-m-d
 def convert_header_date(date):
@@ -86,8 +85,9 @@ list_of_rows_batch = []
 rows_batch_len = 0
 recordsfetched = 0
 failures = 0
+datelist = []
 
-for warc_url in randomwarcs:
+for warc_url in warcs:
     response = requests.get(warc_url, stream=True)
     if response.ok!=True:
         raise Exception("Error downloading WARC file")
@@ -107,7 +107,8 @@ for warc_url in randomwarcs:
                     date = convert_header_date(date)
                     # append the plaintext and price to the batch
                     if date in stockdata.index:
-                        list_of_rows_batch.append({'text':plaintext, 'price':float(stockdata[date])})
+                        datelist.append(date)
+                        list_of_rows_batch.append({'text':plaintext, 'price':float(stockdata[date]), 'date':date})
                         recordsfetched += 1
                         rows_batch_len += 1
                     else:
@@ -123,6 +124,7 @@ for warc_url in randomwarcs:
                 pass
 
         if rows_batch_len >= batch_size_max: 
+            datelist = np.unique(datelist)
             batchdf = spark.createDataFrame(list_of_rows_batch, data)
             print("union started")
             df = df.union(batchdf)
@@ -137,6 +139,7 @@ for warc_url in randomwarcs:
 
     #finishing up for the last batch in it wasn't full and num batches wasnt maxed out.
 if rows_batch_len > 0:
+    datelist = np.unique(datelist)
     print(rows_batch_len)
     batchdf = spark.createDataFrame(list_of_rows_batch, data)
     df = df.union(batchdf)
@@ -183,6 +186,23 @@ pipeline = Pipeline(stages=[
 
 newdf = pipeline.fit(df).transform(df)
 
-
+print("total positive and negatives: ")
 print("positives", newdf.filter(col('sentiment_score') == 'positive').count())
 print("negatives", newdf.filter(col('sentiment_score') == 'negative').count())
+
+sentscores = []
+finacial_data = []
+for date in datelist:
+    print("date: ", date)
+    positives = newdf.filter(col('sentiment_score') == 'positive').filter(col('date') == date).count()
+    negatives = newdf.filter(col('sentiment_score') == 'negative').filter(col('date') == date).count()
+    print("positives", positives)
+    print("negatives", negatives)
+    sentscores.append(positives/negatives)
+    finacial_data.append(float(stockdata[date]))
+
+import matplotlib.pyplot as plt
+x = np.arange(len(finacial_data))
+plt.plot(x, finacial_data)
+plt.plot(x, sentscores)
+plt.show()
