@@ -1,4 +1,7 @@
 '''
+what this does:
+performs sentiment analysis on pre-set number of articles, pulled from most recently uploaded to commoncrawl. 
+This works, but doesn't scale well, especially with regards to number_warcs_to_analyze. It scales much better with number of records per crawl.
 Usuage:
 1.scp this file, requirements.txt, a model called model_dl inside models folder, and sentdat folder to the cluster, and the dockerfile and
 training_fin_classfier.py to the cluster. 

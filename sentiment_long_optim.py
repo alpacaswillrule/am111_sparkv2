@@ -1,4 +1,6 @@
 '''
+Optimized version of sentiment_run. Should work better on larger datsets. However, I would not recommend choosing more
+than 300 wacrcs to analyze, as it will take a long time to run. 
 Usuage:
 1.scp this file, requirements.txt, a model called model_dl inside models folder, and sentdat folder to the cluster, and the dockerfile and
 training_fin_classfier.py to the cluster. 
@@ -100,8 +102,9 @@ data = StructType([\
     StructField("date", StringType(), True)  
 ]
 )
-
+print('starting to load model')
 FINDMODEL = PipelineModel.load(path_dl_model)
+print('model loaded')
 
 #function to drop non-finance articles
 def drop_nonfinance_articles(df):
@@ -168,8 +171,10 @@ while batching_done == False:
       #finishing up for the last batch in it wasn't full and num batches wasnt maxed out.
   if rows_batch_len > 0:
       datelist = np.unique(datelist)
-      for index, date in enumerate(datelist):
-          datelist[index] = str(date)
+      newdatelist = []
+      for date in datelist:
+         newdatelist.append(str(date)) 
+      datelist = newdatelist
       print("done one batch, size: ", rows_batch_len)
       rows_batch_len = 0
 
@@ -186,9 +191,7 @@ while batching_done == False:
   
   list_of_lists_freach_date = []
   for date in datelist:
-      innerlist = []
-      innerlist.append([row for row in list_of_rows_batch if row['date'] == date])
-      list_of_lists_freach_date.append(innerlist)
+      list_of_lists_freach_date.append([row for row in list_of_rows_batch if row['date'] == date])
   
     
   sentscores = []
@@ -211,13 +214,13 @@ while batching_done == False:
 
     positives= df.filter(col('sentiment_score') == 'positive').count()
     negatives = numarticles - positives
-    print("total positive and negatives for ", date[index])
+    print("total positive and negatives for ", datelist[index])
     print("positives", positives)
     print("negatives", negatives)
     if negatives == 0:
       sentscores.append(positives)
     sentscores.append(positives/negatives)
-    finacial_data.append(float(stockdata[date[index]]))
+    finacial_data.append(float(stockdata[datelist[index]]))
 
 
 
