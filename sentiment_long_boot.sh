@@ -6,6 +6,4 @@ scp -i $2 -o StrictHostKeyChecking=accept-new -r "$(pwd)/sentiment_run.py" "$(pw
 
 ssh -i $2 ec2-user@$1
 
-mkdir articlespar.parquet
 
-sudo docker build -t sentiment_long_boot .
