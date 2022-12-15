@@ -233,7 +233,8 @@ while batching_done == False:
     print("negatives", negatives)
     if negatives == 0:
       sentscores.append(positives)
-    sentscores.append(positives/negatives)
+    else:
+      sentscores.append(positives/negatives)
     finacial_data.append(float(stockdata[datelist[index]]))
 
 
