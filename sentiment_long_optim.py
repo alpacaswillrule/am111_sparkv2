@@ -11,11 +11,11 @@ Usuage:
 1. run sentiment_long_boot with ip as parameter and pem location and seconr parameter
 example: sh sentiment_long_boot.sh ec2-54-160-226-58.compute-1.amazonaws.com "/home/johan/Johan_key.pem"
 2.ssh onto master node and mkdir articlespar.parquet, then sudo docker build -t sentiment_long_boot . and run the docker build 
-with sudo docker run -e NUMCRAWLS=120 -e NUMRECORDS=200 -e PYTHONFILETORUN=./sentiment_long_optim.py sentiment_long_boot 
+with sudo docker run -e NUMWARCS=120 -e NUMRECORDS=200 -e PYTHONFILETORUN=./sentiment_long_optim.py sentiment_long_boot 
 if running locally just build and run dockerfile but with additional arguments of (-e AWS_ACCESS_KEY_ID= -e AWS_SECRET_ACCESS_KEY=)
 
 you can pass -e NUMRECORDS=100 to change the number of records to extract from each crawl. 
-you can pass -e NUMCRAWLS=1 to change the number of crawls to analyze. 
+you can pass -e NUMWARCS=1 to change the number of crawls to analyze. 
 
 '''
 
@@ -52,7 +52,7 @@ ticker = 'SPY'
 wordlist = pd.read_csv('./sentdat/topics.csv', header=None)[0].tolist()
 wordlist.extend(yf.Ticker(ticker).info['longName'].split())
 number_warcs_to_analyze = int(os.environ['NUMWARCS']) #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
-randomsample = os.environ('RANSAMPLE').lower() #Y or N, if Y, then it will take a random sample of warcs to analyze, if N, it will take the most recent warcs
+randomsample = str(os.environ('RANSAMPLE')).lower() #Y or N, if Y, then it will take a random sample of warcs to analyze, if N, it will take the most recent warcs
 #CREATING THE PIPELINE FOR LATER
 document_assembler = DocumentAssembler() \
     .setInputCol('text') \
