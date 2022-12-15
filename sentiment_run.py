@@ -35,7 +35,7 @@ import numpy as np
 #PARAMETERS
 path_dl_model = './models/model_dl'
 batch_size_max = sys.maxsize -1
-num_records_percrawl = 1200 #number of recors to attempt to extract from each crawl
+num_records_percrawl = 60 #number of recors to attempt to extract from each crawl
 ticker = 'SPY'
 list_of_dates_to_process = []
 #read in financewordlist.csv into the list
@@ -109,7 +109,7 @@ for warc_url in warcs:
                 #obtains plaintext from the html
                 if detect(plaintext) == 'en' and len(plaintext) > 150:  
                     date = record.rec_headers.get_header('WARC-Date')
-                    date = convert_header_date(date)
+                    date = convert_header_date(date).str.encode('utf-8')
                     # append the plaintext and price to the batch
                     if date in stockdata.index:
                         datelist.append(date)
@@ -155,6 +155,12 @@ print("failures: ", failures)
 
 #dropping non-finance articles
 df = drop_nonfinance_articles(df)
+#drop unessecary columns created from dropping non-finance articles
+cols = df.columns
+for item in ['text', 'price', 'date']:
+    cols.remove(item)
+df = df.drop(*cols)
+
 print("size of data after dropping non-finance articles: ", df.count())
 ###########READING IN THE DATA NOW DONE, STARTING TO PROCESS IT
 
@@ -211,11 +217,19 @@ for date in datelist:
     if negatives == 0:
         sentscores.append(positives)
     sentscores.append(positives/negatives)
-    finacial_data.append(float(stockdata[date]))
+    finacial_data.append(float(stockdata[str(date)]))
 
 import matplotlib.pyplot as plt
 x = np.arange(len(finacial_data))
 plt.plot(x, finacial_data)
+plt.show()
+plt.plot(x, sentscores)
+plt.show()
+plt.plot(x, finacial_data)
 plt.plot(x, sentscores)
 plt.show()
 plt.savefig('sentiment.png')
+
+print(sentscores)
+print(finacial_data)
+print(datelist)
