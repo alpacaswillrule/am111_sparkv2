@@ -1,7 +1,10 @@
 '''
 Usuage:
-scp this file, a model called model_dl, and sentdat folder to the cluster, and the dockerfile
-run the dockerfile with -e PYTHONFILETORUN=./sentiment_run.py, arguments go before the image name
+scp this file, requirements.txt, a model called model_dl inside models folder, and sentdat folder to the cluster, and the dockerfile and
+training_fin_classfier.py to the cluster. 
+Could scp everything but will take far longer, just scp everything but the parquet and make an empty parquet dir on the cluster.
+sudo build/run the dockerfile with -e PYTHONFILETORUN=./sentiment_run.py, arguments go before the image name in run cmd
+make an empty dir called articlespar.parquet
 if running locally just build and run dockerfile but with additional arguments of (-e AWS_ACCESS_KEY_ID= -e AWS_SECRET_ACCESS_KEY=)
 '''
 
@@ -65,7 +68,8 @@ stockdata = yf.download(ticker, start='2010-01-01', end=currentdate)['Adj Close'
 #creating scehma to store text and prices
 data = StructType([\
   StructField("text", StringType(), True),
-    StructField("price", StringType(), True),  
+    StructField("price", StringType(), True),
+    StructField("date", StringType(), True)  
 ]
 )
 
