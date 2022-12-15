@@ -1,10 +1,10 @@
 '''
 Usuage:
-scp this file, requirements.txt, a model called model_dl inside models folder, and sentdat folder to the cluster, and the dockerfile and
+1.scp this file, requirements.txt, a model called model_dl inside models folder, and sentdat folder to the cluster, and the dockerfile and
 training_fin_classfier.py to the cluster. 
 Could scp everything but will take far longer, just scp everything but the parquet and make an empty parquet dir on the cluster.
-sudo build/run the dockerfile with -e PYTHONFILETORUN=./sentiment_run.py, arguments go before the image name in run cmd
-make an empty dir called articlespar.parquet
+2.make an empty dir called articlespar.parquet on the cluster
+3.sudo build/run the dockerfile with -e PYTHONFILETORUN=./sentiment_run.py, arguments go before the image name in run cmd
 if running locally just build and run dockerfile but with additional arguments of (-e AWS_ACCESS_KEY_ID= -e AWS_SECRET_ACCESS_KEY=)
 '''
 
@@ -109,7 +109,7 @@ for warc_url in warcs:
                 #obtains plaintext from the html
                 if detect(plaintext) == 'en' and len(plaintext) > 150:  
                     date = record.rec_headers.get_header('WARC-Date')
-                    date = convert_header_date(date).str.encode('utf-8')
+                    date = convert_header_date(date)
                     # append the plaintext and price to the batch
                     if date in stockdata.index:
                         datelist.append(date)
@@ -148,8 +148,9 @@ if rows_batch_len > 0:
     print(rows_batch_len)
     batchdf = spark.createDataFrame(list_of_rows_batch, data)
     df = df.union(batchdf)
-    print("size of data: ", df.count())
     rows_batch_len = 0
+
+print("size of data: ", df.count())
 print("done")
 print("failures: ", failures)
 
@@ -206,6 +207,7 @@ print("total positive and negatives: ")
 print("positives", df.filter(col('sentiment_score') == 'positive').count())
 print("negatives", df.filter(col('sentiment_score') == 'negative').count())
 
+#exclude this if you want more efficient code, this for loop takes longer than the rest of the code.
 sentscores = []
 finacial_data = []
 for date in datelist:
@@ -218,6 +220,7 @@ for date in datelist:
         sentscores.append(positives)
     sentscores.append(positives/negatives)
     finacial_data.append(float(stockdata[str(date)]))
+
 
 import matplotlib.pyplot as plt
 x = np.arange(len(finacial_data))
