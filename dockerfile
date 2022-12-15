@@ -13,6 +13,8 @@ RUN python3 -V
 ENV PYSPARK_DRIVER_PYTHON python3
 ENV PYSPARK_PYTHON python3
 ENV PYTHONFILETORUN ./training_fin_classfier.py
+ENV NUMRECORDS 400
+ENV NUMWARCS 15
 
 COPY requirements.txt ./
 COPY articlespar.parquet ./articlespar.parquet
@@ -20,6 +22,7 @@ COPY training_fin_classfier.py ./
 COPY sentdat ./sentdat
 COPY models ./models
 COPY sentiment_run.py ./
+COPY sentiment_long_optim.py ./
 
 RUN pip3 install --upgrade pip
 RUN pip3 install -r ./requirements.txt

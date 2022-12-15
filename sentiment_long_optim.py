@@ -1,13 +1,22 @@
 '''
 Optimized version of sentiment_run. Should work better on larger datsets. However, I would not recommend choosing more
 than 300 wacrcs to analyze, as it will take a long time to run. 
+
+For this script to work, a model needs to be in the models folder and it needs to be named model_dl. Training a model is advanced. 
+If you want to train a model, please use the training_fin_classifier.py script, but you can also ask me and I will share the model
+on google drive. (too large to upload to github)
+
 Usuage:
-1.scp this file, requirements.txt, a model called model_dl inside models folder, and sentdat folder to the cluster, and the dockerfile and
-training_fin_classfier.py to the cluster. 
-Could scp everything but will take far longer, just scp everything but the parquet and make an empty parquet dir on the cluster.
-2.make an empty dir called articlespar.parquet on the cluster
-3.sudo build/run the dockerfile with -e PYTHONFILETORUN=./sentiment_long_optim.py, arguments go before the image name in run cmd
+0. Start a cluster with spark-dev cells
+1. run sentiment_long_boot with ip as parameter and pem location and seconr parameter
+example: sh sentiment_long_boot.sh ec2-54-160-226-58.compute-1.amazonaws.com "/home/johan/Johan_key.pem"
+2.ssh onto master node and mkdir articlespar.parquet, then sudo docker build -t sentiment_long_boot and run the docker build 
+with sudo docker run -e PYTHONFILETORUN=./sentiment_long_optim.py sentiment_long_boot 
 if running locally just build and run dockerfile but with additional arguments of (-e AWS_ACCESS_KEY_ID= -e AWS_SECRET_ACCESS_KEY=)
+
+you can pass -e NUMRECORDS = 100 to change the number of records to extract from each crawl. 
+you can pass -e NUMCRAWLS = 1 to change the number of crawls to analyze. 
+
 '''
 
 from pyspark.sql import SparkSession, DataFrame
@@ -30,19 +39,19 @@ import pandas as pd
 import re
 import yfinance as yf
 import boto3
-import botocore
 import random
 import sys 
 import numpy as np
+import os
 #PARAMETERS
 path_dl_model = './models/model_dl'
 batch_size_max = sys.maxsize -1
-num_records_percrawl = 20 #number of recors to attempt to extract from each crawl
+num_records_percrawl = os.environ['NUMRECORDS'] #number of recors to attempt to extract from each crawl
 ticker = 'SPY'
 #read in financewordlist.csv into the list
 wordlist = pd.read_csv('./sentdat/topics.csv', header=None)[0].tolist()
 wordlist.extend(yf.Ticker(ticker).info['longName'].split())
-number_warcs_to_analyze = 5 #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
+number_warcs_to_analyze = os.environ['NUMWARCS'] #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
 
 #CREATING THE PIPELINE FOR LATER
 document_assembler = DocumentAssembler() \
