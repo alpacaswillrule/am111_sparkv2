@@ -5,3 +5,5 @@ virtualenvs/
 articlespar.parquet/
 articlespar.parquet
 dl_model/
+hs_err_pid6360.log/
+sentiment.png
