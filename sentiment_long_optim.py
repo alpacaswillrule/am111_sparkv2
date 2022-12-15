@@ -10,12 +10,12 @@ Usuage:
 0. Start a cluster with spark-dev cells
 1. run sentiment_long_boot with ip as parameter and pem location and seconr parameter
 example: sh sentiment_long_boot.sh ec2-54-160-226-58.compute-1.amazonaws.com "/home/johan/Johan_key.pem"
-2.ssh onto master node and mkdir articlespar.parquet, then sudo docker build -t sentiment_long_boot and run the docker build 
-with sudo docker run -e PYTHONFILETORUN=./sentiment_long_optim.py sentiment_long_boot 
+2.ssh onto master node and mkdir articlespar.parquet, then sudo docker build -t sentiment_long_boot . and run the docker build 
+with sudo docker run -e NUMCRAWLS=120 -e NUMRECORDS=200 -e PYTHONFILETORUN=./sentiment_long_optim.py sentiment_long_boot 
 if running locally just build and run dockerfile but with additional arguments of (-e AWS_ACCESS_KEY_ID= -e AWS_SECRET_ACCESS_KEY=)
 
-you can pass -e NUMRECORDS = 100 to change the number of records to extract from each crawl. 
-you can pass -e NUMCRAWLS = 1 to change the number of crawls to analyze. 
+you can pass -e NUMRECORDS=100 to change the number of records to extract from each crawl. 
+you can pass -e NUMCRAWLS=1 to change the number of crawls to analyze. 
 
 '''
 
@@ -46,13 +46,13 @@ import os
 #PARAMETERS
 path_dl_model = './models/model_dl'
 batch_size_max = sys.maxsize -1
-num_records_percrawl = os.environ['NUMRECORDS'] #number of recors to attempt to extract from each crawl
+num_records_percrawl = int(os.environ['NUMRECORDS']) #number of recors to attempt to extract from each crawl
 ticker = 'SPY'
 #read in financewordlist.csv into the list
 wordlist = pd.read_csv('./sentdat/topics.csv', header=None)[0].tolist()
 wordlist.extend(yf.Ticker(ticker).info['longName'].split())
-number_warcs_to_analyze = os.environ['NUMWARCS'] #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
-
+number_warcs_to_analyze = int(os.environ['NUMWARCS']) #number of warcs to perform sentiment analysis on, goes from most reccent to farther back onse
+randomsample = os.environ('RANSAMPLE').lower() #Y or N, if Y, then it will take a random sample of warcs to analyze, if N, it will take the most recent warcs
 #CREATING THE PIPELINE FOR LATER
 document_assembler = DocumentAssembler() \
     .setInputCol('text') \
@@ -90,7 +90,10 @@ for object in my_bucket.objects.filter(Prefix='crawl-data/CC-NEWS/'):
     if object.key.endswith('.warc.gz'):
         warcs.append(object.key)
 
-warcs = warcs[-number_warcs_to_analyze:]
+if randomsample == 'y':
+    warcs = random.sample(warcs, number_warcs_to_analyze)
+else:
+  warcs = warcs[-number_warcs_to_analyze:]
 
 for index, warc in enumerate(warcs):
     warcs[index] = 'https://data.commoncrawl.org/' + warc
@@ -208,9 +211,10 @@ while batching_done == False:
 
   for index, one_date_lst in enumerate(list_of_lists_freach_date):
     df = spark.createDataFrame(one_date_lst, schema=data)
-    numarticles = len(one_date_lst)
     #dropping non-finance articles
     df = drop_nonfinance_articles(df)
+    numarticles = df.count() 
+    print("dropped non-finance articles, num articles for this date: ", numarticles, " date: ", datelist[index])
     #drop unessecary columns created from dropping non-finance articles
     cols = df.columns
     for item in ['text', 'price', 'date']:

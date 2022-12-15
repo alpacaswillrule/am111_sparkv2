@@ -15,6 +15,7 @@ ENV PYSPARK_PYTHON python3
 ENV PYTHONFILETORUN ./training_fin_classfier.py
 ENV NUMRECORDS 400
 ENV NUMWARCS 15
+ENV RANSAMPLE N
 
 COPY requirements.txt ./
 COPY articlespar.parquet ./articlespar.parquet
