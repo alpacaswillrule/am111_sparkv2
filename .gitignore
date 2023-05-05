@@ -7,3 +7,5 @@ articlespar.parquet
 dl_model/
 hs_err_pid6360.log/
 sentiment.png
+df.parquet/
+df_sorted.parquet/
