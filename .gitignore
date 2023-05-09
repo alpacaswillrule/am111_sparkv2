@@ -19,6 +19,9 @@ df_9sorted.parquet/
 df_10sorted.parquet/
 df_11sorted.parquet/
 df_12sorted.parquet/
+df_13sorted.parquet/
+df_14sorted.parquet/
+df_15sorted.parquet/
 df_6.parquet/
 df_7.parquet/
 df_8.parquet/
@@ -26,5 +29,8 @@ df_9.parquet/
 df_10.parquet/
 df_11.parquet/
 df_12.parquet/
+df_13.parquet/
+df_14.parquet/
+df_15.parquet/
 
 
